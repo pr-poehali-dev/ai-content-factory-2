@@ -5,13 +5,43 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Icon from '@/components/ui/icon';
+import DemoGenerator from '@/components/DemoGenerator';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
+  const { toast } = useToast();
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('https://functions.poehali.dev/deb61684-2b22-4fcd-852b-51ffd5c9d241', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Сообщение отправлено!",
+          description: "Мы свяжемся с вами в ближайшее время",
+        });
+        setFormData({ name: '', email: '', message: '' });
+      } else {
+        throw new Error('Failed to send');
+      }
+    } catch (error) {
+      toast({
+        title: "Ошибка отправки",
+        description: "Пожалуйста, попробуйте позже",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -59,6 +89,8 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      <DemoGenerator />
 
       <section id="features" className="py-20 px-4 bg-white">
         <div className="container mx-auto">
@@ -369,9 +401,18 @@ const Index = () => {
                     onChange={(e) => setFormData({...formData, message: e.target.value})}
                   />
                 </div>
-                <Button type="submit" className="w-full">
-                  <Icon name="Send" size={20} className="mr-2" />
-                  Отправить
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
+                      Отправка...
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="Send" size={20} className="mr-2" />
+                      Отправить
+                    </>
+                  )}
                 </Button>
               </form>
             </CardContent>
